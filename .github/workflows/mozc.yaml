@@ -1,0 +1,19 @@
+name: Build mozc
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Install dependencies
+        run: |
+          pacman -Syu --noconfirm git base-devel cmake ninja extra-cmake-modules xcb-util xcb-util-keysyms cairo enchant iso-codes libxkbcommon-x11 pango systemd wayland xcb-util-wm libxkbfile fmt gdk-pixbuf2 wayland-protocols
+      - name: Build
+        run: |
+          useradd -m user
+          su user -c "git clone --depth 1 https://gitlab.archlinux.org/archlinux/packaging/packages/fcitx5.git"
+          su user -c "cd fcitx5; makepkg"
+
+#        working-directory: ./fcitx5
