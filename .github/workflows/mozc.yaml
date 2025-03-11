@@ -1,0 +1,85 @@
+name: Build mozc
+on: [workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      DEBIAN_FRONTEND: noninteractive
+      PKG_CONFIG_PATH: /opt/ibus/share/pkgconfig:/opt/ibus/lib/pkgconfig
+    steps:
+      - name: Prepare
+        run: |
+          sudo apt-get -y install \
+            git \
+            desktop-file-utils \
+            dbus-x11 \
+            gobject-introspection \
+            gtk-doc-tools \
+            libdconf-dev \
+            libgirepository1.0-dev \
+            libglib2.0-dev \
+            libgtk-3-dev \
+            libtool \
+            autopoint \
+            automake \
+            autoconf \
+            dconf-cli \
+            intltool \
+            gcc g++ make \
+            libwayland-dev \
+            python-gi-dev \
+            python3-all \
+            valac \
+            valac-0.56-vapi \
+            wayland-protocols \
+            wget \
+            gettext
+      - name: Build iso-codes
+        run: |
+          repo=https://salsa.debian.org/debian/iso-codes
+          git clone --depth 1 -b $(git ls-remote --refs --tags $repo | cut -d / -f 3- | sort -V | tail -n 1) $repo
+          (
+            cd iso-codes
+            ./configure --prefix=/opt/ibus
+            sudo make install
+          )
+      - name: Build ibus
+        run: |
+          repo=https://github.com/ibus/ibus.git
+          git clone --depth 1 -b $(git ls-remote --refs --tags $repo | cut -d / -f 3- | grep -P '\d+[.]\d+[.]\d+' | sort -V | tail -n 1) $repo
+          (
+            cd ibus
+            # fix patch from LFS Book 
+            sed -e 's@/desktop/ibus@/org/freedesktop/ibus@g' \
+              -i data/dconf/org.freedesktop.ibus.gschema.xml
+            if ! [ -e /usr/bin/gtkdocize ]; then
+              sed '/docs/d;/GTK_DOC/d' -i Makefile.am configure.ac
+            fi
+            SAVE_DIST_FILES=1 ./autogen.sh \
+              --prefix=/opt/ibus \
+              --enable-wayland \
+              --enable-introspection \
+              --disable-tests \
+              --disable-gtk2 \
+              --disable-gtk4 \
+              --disable-xim \
+              --disable-appindicator \
+              --disable-systemd-services \
+              --disable-python2 \
+              --disable-emoji-dict \
+              --disable-unicode-dict \
+              --disable-libnotify \
+              --disable-gtk-doc \
+              --with-ucd-dir=/opt/ibus/share/unicode/ucd \
+              --with-unicode-emoji-dir=/opt/ibus/share/unicode/emoji \
+              --with-emoji-annotation-dir=/opt/ibus/share/unicode/emoji-annotations
+            make -j$(nproc) install
+          )
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ibus
+          path: /opt/ibus
+
+#        working-directory: fcitx5
