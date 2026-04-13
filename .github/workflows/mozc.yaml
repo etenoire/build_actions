@@ -19,6 +19,7 @@ jobs:
             meson \
             ninja-build \
             libgtk-3-dev \
+            libsystemd-dev \
             gcc g++ make \
             libwayland-dev \
             python-gi-dev \
@@ -53,7 +54,7 @@ jobs:
           )
       - name: Build fmt
         run: |
-          last_tag=$(curl https://api.github.com/repos/fmtlib/fmt/releases/latest | grep -oP '(?<=tag_name": ").*(?=")')
+          last_tag=$(curl -s https://api.github.com/repos/fmtlib/fmt/releases/latest | grep -oP '(?<=tag_name": ").*(?=")')
           git clone --depth 1 -b $last_tag https://github.com/fmtlib/fmt.git
           (
             mkdir fmt/build
