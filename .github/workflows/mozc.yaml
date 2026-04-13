@@ -16,6 +16,8 @@ jobs:
             git \
             cmake \
             extra-cmake-modules \
+            meson \
+            ninja-build \
             libgtk-3-dev \
             gcc g++ make \
             libwayland-dev \
@@ -23,16 +25,15 @@ jobs:
             python3-all \
             wayland-protocols \
             wget curl \
-            gettext \
-            ninja-build
+            gettext
       - name: Build iso-codes
         run: |
           repo=https://salsa.debian.org/debian/iso-codes
           git clone --depth 1 -b $(git ls-remote --refs --tags $repo | cut -d / -f 3- | sort -V | tail -n 1) $repo
           (
             cd iso-codes
-            ./configure --prefix=/opt/fcitx5
-            sudo make install
+            meson setup --buildtype=release --prefix=/opt/fcitx5 build .
+            sudo ninja -C build install
           )
       - name: Build json-c
         run: |
