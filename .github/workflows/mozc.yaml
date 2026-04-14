@@ -27,53 +27,36 @@ jobs:
             wayland-protocols \
             wget curl \
             gettext
+          sudo mkdir /opt/fcitx5
+          sudo chmod 777 /opt/fcitx5
       - name: Build iso-codes
         run: |
           repo=https://salsa.debian.org/debian/iso-codes
           git clone --depth 1 -b $(git ls-remote --refs --tags $repo | cut -d / -f 3- | sort -V | tail -n 1) $repo
           (
             cd iso-codes
-            meson setup --buildtype=release --prefix=/opt/fcitx5 build .
-            sudo ninja -C build install
+            meson setup build --buildtype=release --prefix=/opt/fcitx5
+            ninja -C build install
           )
-      - name: Build json-c
+      - name: Build json
         run: |
-          repo=https://github.com/json-c/json-c.git
+          repo=https://github.com/nlohmann/json
           git clone --depth 1 -b $(git ls-remote --refs --tags $repo | cut -d / -f 3- | sort -V | tail -n 1) $repo
           (
-            mkdir json-c/build
-            cd json-c/build
-            cmake -GNinja .. \
+            cd json
+            cmake -G Ninja -B build \
               -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_INSTALL_PREFIX=/opt/fcitx5 \
-              -DBUILD_APPS=OFF \
-              -DBUILD_SHARED_LIBS=OFF \
-              -DBUILD_STATIC_LIBS=ON \
-              -DBUILD_TESTING=OFF
-            sudo ninja install
-          )
-      - name: Build fmt
-        run: |
-          last_tag=$(curl -s https://api.github.com/repos/fmtlib/fmt/releases/latest | grep -oP '(?<=tag_name": ").*(?=")')
-          git clone --depth 1 -b $last_tag https://github.com/fmtlib/fmt.git
-          (
-            mkdir fmt/build
-            cd fmt/build
-            cmake -GNinja .. \
-              -DCMAKE_BUILD_TYPE=Release \
-              -DCMAKE_INSTALL_PREFIX=/opt/fcitx5 \
-              -DFMT_DOC=OFF \
-              -DFMT_TEST=OFF
-            sudo ninja install
+              -DJSON_BuildTests=OFF
+            ninja -C build install
           )
       - name: Build fcitx5
         run: |
           repo=https://github.com/fcitx/fcitx5.git
           git clone --depth 1 -b $(git ls-remote --refs --tags $repo | cut -d / -f 3- | sort -V | tail -n 1) $repo
           (
-            mkdir fcitx5/build
-            cd fcitx5/build
-            cmake -GNinja .. \
+            cd fcitx5
+            cmake -G Ninja -B build \
               -DBUILD_SPELL_DICT=OFF \
               -DCMAKE_BUILD_TYPE=Release \
               -DCMAKE_INSTALL_PREFIX=/opt/fcitx5 \
@@ -81,7 +64,7 @@ jobs:
               -DENABLE_TEST=OFF \
               -DENABLE_X11=OFF \
               -DENABLE_XDGAUTOSTART=OFF
-            sudo ninja install
+            ninja -C build install
           )
       - name: Build mozc
         run: |
