@@ -53,7 +53,7 @@ jobs:
       - name: Build fcitx5
         run: |
           repo=https://github.com/fcitx/fcitx5.git
-          git clone --depth 1 -b $(git ls-remote --refs --tags $repo | cut -d / -f 3- | sort -V | tail -n 1) $repo
+          git clone --depth 1 --recursive -b $(git ls-remote --refs --tags $repo | cut -d / -f 3- | sort -V | tail -n 1) $repo
           (
             cd fcitx5
             cmake -G Ninja -B build \
@@ -62,6 +62,7 @@ jobs:
               -DCMAKE_INSTALL_PREFIX=/opt/fcitx5 \
               -DENABLE_ENCHANT=OFF \
               -DENABLE_TEST=OFF \
+              -DENABLE_TESTING_ADDONS=OFF \
               -DENABLE_X11=OFF \
               -DENABLE_XDGAUTOSTART=OFF
             ninja -C build install
